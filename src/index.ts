@@ -5,8 +5,10 @@ const WIDGET_ID = "prime-agent-openai-cache"
 type CacheMessage = {
   readonly role?: unknown
   readonly provider?: unknown
+  readonly providerID?: unknown
   readonly api?: unknown
   readonly model?: unknown
+  readonly modelID?: unknown
   readonly usage?: {
     readonly input?: unknown
     readonly output?: unknown
@@ -19,6 +21,7 @@ type CacheMessage = {
 let detailedView = false
 let streamStartTimestamp = 0
 let lastTokensPerSec = 0
+let lastLatencyMs = 0
 let lastWidgetLinesKey: string | null = null
 
 function formatTokens(value: number): string {
@@ -43,14 +46,36 @@ function nonNegativeNumber(value: unknown): number {
 
 function isOpenAIMessage(message: CacheMessage): boolean {
   if (message.role !== "assistant") return false
-  const provider = String(message.provider ?? "").toLowerCase()
+  const provider = String(message.provider ?? message.providerID ?? "").toLowerCase()
   const api = String(message.api ?? "").toLowerCase()
+  const model = String(message.model ?? message.modelID ?? "").toLowerCase()
+
   return (
     provider.includes("openai") ||
     provider.includes("chatgpt") ||
     api.includes("openai") ||
     api.includes("chatgpt") ||
-    api.includes("codex")
+    api.includes("codex") ||
+    model.startsWith("gpt-") ||
+    model.startsWith("o1") ||
+    model.startsWith("o3") ||
+    model.includes("codex")
+  )
+}
+
+function isOpenAIModel(modelObj: unknown): boolean {
+  if (!modelObj || typeof modelObj !== "object") return false
+  const m = modelObj as Record<string, unknown>
+  const provider = String(m.provider ?? m.providerID ?? "").toLowerCase()
+  const id = String(m.id ?? m.modelID ?? "").toLowerCase()
+
+  return (
+    provider.includes("openai") ||
+    provider.includes("chatgpt") ||
+    id.startsWith("gpt-") ||
+    id.startsWith("o1") ||
+    id.startsWith("o3") ||
+    id.includes("codex")
   )
 }
 
@@ -78,9 +103,10 @@ function cacheReadPercentage(message: CacheMessage, cacheRead: number, cacheWrit
   return `${Math.round((cacheRead / total) * 100)}%`
 }
 
-function sessionTokenTotals(messages: readonly CacheMessage[]): { input: number; output: number } | undefined {
+function sessionTokenTotals(messages: readonly CacheMessage[]): { input: number; output: number; reasoning: number } | undefined {
   let input = 0
   let output = 0
+  let reasoning = 0
 
   for (const message of messages) {
     if (!isOpenAIMessage(message)) continue
@@ -94,9 +120,10 @@ function sessionTokenTotals(messages: readonly CacheMessage[]): { input: number;
       nonNegativeNumber(message.usage?.cacheRead) +
       nonNegativeNumber(message.usage?.cacheWrite)
     output += Math.max(0, visibleOutput)
+    reasoning += nonNegativeNumber(message.usage?.reasoning)
   }
 
-  return { input, output }
+  return { input, output, reasoning }
 }
 
 function buildWidgetLines(message: CacheMessage, messages: readonly CacheMessage[]): string[] {
@@ -116,21 +143,29 @@ function buildWidgetLines(message: CacheMessage, messages: readonly CacheMessage
   ].join(" ")
 
   const speedStr = lastTokensPerSec > 0 ? ` · ${lastTokensPerSec} T/s` : ""
-  const ledger = totals ? ` · Σ${formatTokens(totals.input)} in · ${formatTokens(totals.output)} out` : ""
+  const latencyStr = lastLatencyMs > 0 ? ` · ${(lastLatencyMs / 1000).toFixed(1)}s` : ""
+  const reasoningStr = reasoningTokens > 0 ? ` (🧠 ${formatTokens(reasoningTokens)})` : ""
+  const ledger = totals
+    ? ` · Σ${formatTokens(totals.input)} in · ${formatTokens(totals.output)} out${totals.reasoning > 0 ? ` (${formatTokens(totals.reasoning)} 🧠)` : ""}`
+    : ""
 
   if (!detailedView) {
-    return [`${prefix} ${cacheSymbol}${ledger}${speedStr}`]
+    return [`${prefix} ${cacheSymbol}${ledger}${speedStr}${latencyStr}`]
   }
 
   // Detailed view
   const lines: string[] = ["OpenAI Token & Cache Status"]
   lines.push(`  Cache:   ${prefix} ${cacheSymbol}`)
-  lines.push(`  Turn:    in ${formatTokens(freshInput)} · read ${formatTokens(cacheRead)} · wrote ${formatTokens(cacheWrite)} · out ${formatTokens(outputTokens)}${reasoningTokens > 0 ? ` (${formatTokens(reasoningTokens)} reasoning)` : ""}`)
+  lines.push(`  Turn:    in ${formatTokens(freshInput)} · read ${formatTokens(cacheRead)} · wrote ${formatTokens(cacheWrite)} · out ${formatTokens(outputTokens)}${reasoningStr}`)
   if (totals) {
-    lines.push(`  Session: Σ${formatTokens(totals.input)} total in · Σ${formatTokens(totals.output)} total out`)
+    lines.push(`  Session: Σ${formatTokens(totals.input)} total in · Σ${formatTokens(totals.output)} total out${totals.reasoning > 0 ? ` (Σ${formatTokens(totals.reasoning)} reasoning)` : ""}`)
   }
-  if (lastTokensPerSec > 0) {
-    lines.push(`  Speed:   ${lastTokensPerSec} T/s`)
+  if (lastTokensPerSec > 0 || lastLatencyMs > 0) {
+    const stats = [
+      ...(lastTokensPerSec > 0 ? [`${lastTokensPerSec} T/s`] : []),
+      ...(lastLatencyMs > 0 ? [`${(lastLatencyMs / 1000).toFixed(1)}s latency`] : []),
+    ].join(" · ")
+    lines.push(`  Perf:    ${stats}`)
   }
   return lines
 }
@@ -161,6 +196,10 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", (_event, ctx) => {
     if (!ctx.hasUI) return
     try {
+      if (ctx.model && !isOpenAIModel(ctx.model)) {
+        clearWidget(ctx)
+        return
+      }
       renderLatestStatus(ctx, sessionMessages(ctx))
     } catch (err) {
       console.warn(`[prime-agent-openai] session_start error: ${err instanceof Error ? err.message : String(err)}`)
@@ -170,14 +209,27 @@ export default function (pi: ExtensionAPI) {
   pi.on("model_select", (_event, ctx) => {
     if (!ctx.hasUI) return
     try {
+      if (ctx.model && !isOpenAIModel(ctx.model)) {
+        clearWidget(ctx)
+        return
+      }
       renderLatestStatus(ctx, sessionMessages(ctx))
     } catch (err) {
       console.warn(`[prime-agent-openai] model_select error: ${err instanceof Error ? err.message : String(err)}`)
     }
   })
 
-  pi.on("after_provider_response", (_event, _ctx) => {
+  pi.on("after_provider_response", (event, _ctx) => {
     streamStartTimestamp = Date.now()
+    if (event?.headers) {
+      const procHeader = event.headers["openai-processing-ms"] || event.headers["x-openai-processing-ms"]
+      if (procHeader) {
+        const parsed = parseInt(String(procHeader), 10)
+        if (Number.isFinite(parsed) && parsed > 0) {
+          lastLatencyMs = parsed
+        }
+      }
+    }
   })
 
   pi.on("message_end", (event, ctx) => {
@@ -192,10 +244,10 @@ export default function (pi: ExtensionAPI) {
       }
 
       const outputTokens = finiteNumber(message.usage?.output) ?? 0
-      if (outputTokens > 0 && streamStartTimestamp > 0) {
-        const elapsedMs = Date.now() - streamStartTimestamp
-        if (elapsedMs > 0) {
-          lastTokensPerSec = Math.round((outputTokens / elapsedMs) * 1000)
+      if (streamStartTimestamp > 0) {
+        lastLatencyMs = Date.now() - streamStartTimestamp
+        if (outputTokens > 0 && lastLatencyMs > 0) {
+          lastTokensPerSec = Math.round((outputTokens / lastLatencyMs) * 1000)
         }
       }
 
