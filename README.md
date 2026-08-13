@@ -1,5 +1,8 @@
 # prime-agent-openai
 
+> [!WARNING]
+> This extension is **experimental** and under active development. Features or behavior may change or break at any time.
+
 Prime Agent extension for OpenAI and ChatGPT models — token usage, prompt caching status, response generation speed, and session ledgers.
 
 ## Features
