@@ -1,0 +1,11 @@
+{
+  "name": "prime-agent-openai",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "latest",
+    "typescript": "^5.0.0"
+  }
+}
