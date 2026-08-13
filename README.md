@@ -56,3 +56,8 @@ bash install.sh
 
 # Edit src/index.ts, then run /reload in Prime Agent to test
 ```
+
+## License
+
+[MIT](LICENSE)
+
