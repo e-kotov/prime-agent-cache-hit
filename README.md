@@ -21,28 +21,13 @@ that reports no cache gets a ledger and a speed rather than a permanent `⇣0 0%
 | **Compact & Detailed Views** | One-line widget by default; toggle multi-line breakdown with `/cache-hit` |
 | **Provider Scoping** | Totals and speed follow the provider of the newest reply, so switching mid-session never mixes two providers' numbers |
 
-## Quick Install
+## Install
 
 ```bash
-# From the checked-out repository:
-bash install.sh
+git clone https://github.com/e-kotov/prime-agent-cache-hit.git && cd prime-agent-cache-hit && bash install.sh
 ```
 
-Restart Prime Agent or run `/reload` to activate.
-
-### Manual Install
-
-```bash
-mkdir -p ~/.prime/agent/extensions
-ln -sf "$PWD/src/index.ts" ~/.prime/agent/extensions/openai.ts
-ln -sf "$PWD/src/index.ts" ~/.prime/agent/extensions/chatgpt-cache-status.ts
-```
-
-### Uninstall
-
-```bash
-rm -f ~/.prime/agent/extensions/openai.ts ~/.prime/agent/extensions/chatgpt-cache-status.ts
-```
+Restart Prime Agent or run `/reload`.
 
 ## Usage
 
