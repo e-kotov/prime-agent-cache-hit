@@ -3,7 +3,7 @@
 > [!WARNING]
 > This extension is **experimental** and under active development. Features or behavior may change or break at any time.
 
-Prime Agent extension for OpenAI and ChatGPT models — token usage, prompt caching status, response generation speed, and session ledgers.
+An extension for [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) supporting OpenAI and ChatGPT models — token usage, prompt caching status, response generation speed, and session ledgers.
 
 ## Features
 
@@ -49,7 +49,7 @@ The extension automatically activates when using OpenAI or ChatGPT models (e.g. 
 
 ## How it works
 
-The extension listens to Prime Agent lifecycle events (`session_start`, `model_select`, `after_provider_response`, `message_end`) to extract token usage (`input`, `output`, `cacheRead`, `cacheWrite`, `reasoning`). It renders a widget above the editor via `ctx.ui.setWidget()` with `placement: "aboveEditor"`.
+The extension listens to [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) lifecycle events (`session_start`, `model_select`, `after_provider_response`, `message_end`) to extract token usage (`input`, `output`, `cacheRead`, `cacheWrite`, `reasoning`). It renders a widget above the editor via `ctx.ui.setWidget()` with `placement: "aboveEditor"`.
 
 ## Development
 
