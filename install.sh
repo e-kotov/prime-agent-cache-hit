@@ -12,4 +12,4 @@ ln -sf "$SCRIPT_DIR/src/index.ts" "$TARGET_DIR/openai.ts"
 # Also update chatgpt-cache-status.ts symlink for backwards compatibility
 ln -sf "$SCRIPT_DIR/src/index.ts" "$TARGET_DIR/chatgpt-cache-status.ts"
 
-echo "Installed prime-agent-openai extension -> $TARGET_DIR/openai.ts & $TARGET_DIR/chatgpt-cache-status.ts"
+echo "Installed prime-agent-cache-hit extension -> $TARGET_DIR/openai.ts & $TARGET_DIR/chatgpt-cache-status.ts"

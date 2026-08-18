@@ -1,6 +1,6 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent"
 
-const WIDGET_ID = "prime-agent-openai-cache"
+const WIDGET_ID = "prime-agent-cache-hit"
 
 type CacheMessage = {
   readonly role?: unknown
@@ -191,7 +191,7 @@ function renderLatestStatus(ctx: ExtensionContext, messages: readonly CacheMessa
 }
 
 export default function (pi: ExtensionAPI) {
-  console.log("[prime-agent-openai] extension loaded")
+  console.log("[prime-agent-cache-hit] extension loaded")
 
   pi.on("session_start", (_event, ctx) => {
     if (!ctx.hasUI) return
@@ -202,7 +202,7 @@ export default function (pi: ExtensionAPI) {
       }
       renderLatestStatus(ctx, sessionMessages(ctx))
     } catch (err) {
-      console.warn(`[prime-agent-openai] session_start error: ${err instanceof Error ? err.message : String(err)}`)
+      console.warn(`[prime-agent-cache-hit] session_start error: ${err instanceof Error ? err.message : String(err)}`)
     }
   })
 
@@ -215,7 +215,7 @@ export default function (pi: ExtensionAPI) {
       }
       renderLatestStatus(ctx, sessionMessages(ctx))
     } catch (err) {
-      console.warn(`[prime-agent-openai] model_select error: ${err instanceof Error ? err.message : String(err)}`)
+      console.warn(`[prime-agent-cache-hit] model_select error: ${err instanceof Error ? err.message : String(err)}`)
     }
   })
 
@@ -254,7 +254,7 @@ export default function (pi: ExtensionAPI) {
       const messages = sessionMessages(ctx, message)
       renderLatestStatus(ctx, messages)
     } catch (err) {
-      console.warn(`[prime-agent-openai] message_end error: ${err instanceof Error ? err.message : String(err)}`)
+      console.warn(`[prime-agent-cache-hit] message_end error: ${err instanceof Error ? err.message : String(err)}`)
     }
   })
 
@@ -267,7 +267,7 @@ export default function (pi: ExtensionAPI) {
         renderLatestStatus(ctx, sessionMessages(ctx))
         ctx.ui.notify(`OpenAI detailed view ${detailedView ? "enabled" : "disabled"}`, "info")
       } catch (err) {
-        console.warn(`[prime-agent-openai] /openai-cache error: ${err instanceof Error ? err.message : String(err)}`)
+        console.warn(`[prime-agent-cache-hit] /openai-cache error: ${err instanceof Error ? err.message : String(err)}`)
       }
     },
   })

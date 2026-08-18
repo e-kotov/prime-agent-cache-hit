@@ -1,4 +1,4 @@
-# prime-agent-openai
+# prime-agent-cache-hit
 
 > [!WARNING]
 > This extension is **experimental** and under active development. Features or behavior may change or break at any time.
@@ -54,7 +54,7 @@ The extension listens to [Prime Agent](https://github.com/PrimeIntellect-ai/prim
 ## Development
 
 ```bash
-cd prime-agent-openai
+cd prime-agent-cache-hit
 bash install.sh
 
 # Edit src/index.ts, then run /reload in Prime Agent to test
