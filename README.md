@@ -10,6 +10,8 @@ None of what it shows is vendor-specific, so nothing is gated on a vendor. Every
 the provider that answered last, and a group whose data never arrived is simply absent: a provider
 that reports no cache gets a ledger and a speed rather than a permanent `⇣0 0% ❄`.
 
+See [CHANGELOG.md](CHANGELOG.md) for the current unreleased behavior.
+
 ## Features
 
 | Feature | Description |
